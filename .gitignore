@@ -1,0 +1,33 @@
+# Dependencies
+node_modules/
+dist/
+build/
+
+# Environment
+.env*
+!.env.example
+
+# Logs
+logs
+*.log
+
+# IDE
+.vscode/
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Test
+coverage/
+
+# ai config
+.claude/*
+!.claude/skills
+!.claude/example-settings.json
+!.claude/settings.local.json
