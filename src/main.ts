@@ -1,13 +1,20 @@
 import 'dotenv-safe/config'; // 加载 .env 并验证必需变量
 import { NestFactory } from '@nestjs/core';
-import { ValidationPipe } from '@nestjs/common';
+import { ValidationPipe, Logger } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
-import { SuccessInterceptor } from './common/interceptors/success.interceptor';
+import { LogsService } from './logs/logs.service';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const logger = new Logger('Bootstrap');
+
+  const app = await NestFactory.create(AppModule, {
+    bufferLogs: true,
+  });
+
+  // 使用自定义日志服务
+  app.useLogger(app.get(LogsService));
 
   // 全局前缀
   app.setGlobalPrefix('api');
@@ -26,11 +33,8 @@ async function bootstrap() {
     }),
   );
 
-  // 全局拦截器
-  app.useGlobalInterceptors(new SuccessInterceptor());
-
-  // 全局过滤器
-  app.useGlobalFilters(new HttpExceptionFilter());
+  // 全局过滤器 - 在 NestJS 10.x 中通过 APP_FILTER 使用
+  // 已在 LogsModule 中注册
 
   // Swagger 配置 - 仅在开发环境启用
   if (process.env.NODE_ENV !== 'production') {
@@ -46,9 +50,9 @@ async function bootstrap() {
 
   const port = process.env.PORT || 3000;
   await app.listen(port);
-  console.log(`Application is running on: http://localhost:${port}/api`);
+  logger.log(`Application is running on: http://localhost:${port}/api`);
   if (process.env.NODE_ENV !== 'production') {
-    console.log(`Swagger documentation: http://localhost:${port}/api/docs`);
+    logger.log(`Swagger documentation: http://localhost:${port}/api/docs`);
   }
 }
 bootstrap();

@@ -12,4 +12,10 @@ export default () => ({
     expiresIn: process.env.JWT_EXPIRES_IN || '7d',
   },
   nodeEnv: process.env.NODE_ENV || 'development',
+  logs: {
+    level: process.env.LOG_LEVEL || 'info',
+    dir: process.env.LOG_DIR || './logs',
+    maxFiles: parseInt(process.env.LOG_MAX_FILES || '7', 10),
+    maxSize: process.env.LOG_MAX_SIZE || '10m',
+  },
 });

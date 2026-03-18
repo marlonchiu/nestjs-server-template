@@ -8,6 +8,7 @@ import { AuthModule } from './modules/auth/auth.module';
 import { JwtConfigModule } from './modules/auth/jwt-config.module';
 import { UserModule } from './modules/user/user.module';
 import { OrderModule } from './modules/order/order.module';
+import { LogsModule } from './logs/logs.module';
 
 @Module({
   imports: [
@@ -19,6 +20,7 @@ import { OrderModule } from './modules/order/order.module';
       ttl: 60000,
       limit: 100,
     }]),
+    LogsModule,
     CommonModule,
     DatabaseModule,
     JwtConfigModule,

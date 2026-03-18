@@ -41,6 +41,8 @@
 | JWT | ^10.0 | 用户认证 |
 | Swagger | ^7.0 | API 文档自动生成 |
 | Throttler | ^6.0 | 速率限制 |
+| Pino | ^10.3 | 高性能日志框架 |
+| nestjs-pino | ^4.6 | NestJS 日志集成 |
 
 ## 架构设计
 
@@ -73,6 +75,7 @@
 | 认证模块 | 用户注册、登录、JWT 令牌签发 |
 | 用户管理 | CRUD、权限控制、数据分页 |
 | 订单管理 | 订单创建、金额服务端校验、状态流转 |
+| 日志模块 | 全局日志服务、HTTP 请求日志、错误日志、请求追踪 |
 | 公共组件 | 统一响应格式、异常过滤、日志记录 |
 
 ## 项目结构
@@ -100,6 +103,13 @@ nestjs-server-template/
 │   │   └── decorators/               # 装饰器
 │   │       ├── current-user.decorator.ts
 │   │       └── check-ownership.decorator.ts
+│   ├── logs/                         # 日志模块
+│   │   ├── logs.module.ts            # 日志模块定义
+│   │   ├── logs.service.ts           # 日志服务
+│   │   ├── interceptors/             # 拦截器
+│   │   ├── middleware/               # 中间件
+│   │   ├── transports/               # 传输器配置
+│   │   └── interfaces/               # 接口定义
 │   ├── database/                     # 数据库模块
 │   │   ├── database.module.ts         # 数据库连接（含连接池）
 │   │   ├── schema.ts                 # 数据库 Schema 导出
@@ -175,6 +185,12 @@ CORS_ORIGIN=true
 # JWT 配置
 JWT_SECRET=your-super-secret-jwt-key-change-in-production
 JWT_EXPIRES_IN=7d
+
+# 日志配置
+LOG_LEVEL=info
+LOG_DIR=./logs
+LOG_MAX_FILES=7
+LOG_MAX_SIZE=10m
 ```
 
 ### 3. 同步数据库

@@ -5,12 +5,19 @@ import {
   HttpException,
   HttpStatus,
   Logger,
+  Inject,
 } from '@nestjs/common';
 import { Response, Request } from 'express';
+import { LogsService } from '../../logs/logs.service';
 
 @Catch()
 export class HttpExceptionFilter implements ExceptionFilter {
   private readonly logger = new Logger(HttpExceptionFilter.name);
+
+  constructor(
+    @Inject(LogsService)
+    private logsService: LogsService,
+  ) {}
 
   catch(exception: unknown, host: ArgumentsHost) {
     const ctx = host.switchToHttp();
@@ -24,6 +31,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
 
     let message: string | object;
     let errorDetail: string | undefined;
+    let errorStack: string | undefined;
 
     if (exception instanceof HttpException) {
       const res = exception.getResponse();
@@ -31,39 +39,51 @@ export class HttpExceptionFilter implements ExceptionFilter {
     } else {
       // 非 HTTP 异常，记录详细错误信息
       message = '服务器内部错误';
-      errorDetail = exception instanceof Error ? exception.message : String(exception);
+      const error = exception as Error;
+      errorDetail = error.message || String(exception);
+      errorStack = error.stack;
     }
 
+    // 获取请求追踪信息
+    const requestId = (request as any).requestId;
+    const { method, url, ip, headers } = request;
+    const userAgent = headers['user-agent'];
+    const clientIp = ip || 'unknown';
+
     // 记录错误日志
-    this.logError(status, request, errorDetail);
+    this.logsService.logHttpError(
+      method,
+      url,
+      status,
+      errorDetail || String(message),
+      clientIp,
+      userAgent,
+      requestId,
+    );
+
+    // 记录详细错误日志
+    this.logsService.error(
+      errorDetail || String(message),
+      errorStack,
+      {
+        type: 'http_exception',
+        method,
+        url,
+        statusCode: status,
+        ip: clientIp,
+        userAgent,
+        requestId,
+      },
+    );
 
     // 生产环境隐藏内部错误详情
     const isProduction = process.env.NODE_ENV === 'production';
-    const responseMessage = isProduction && errorDetail ? message : message;
 
     response.status(status).json({
       success: false,
-      error: typeof responseMessage === 'string' ? responseMessage : (responseMessage as any).message || responseMessage,
+      error: typeof message === 'string' ? message : (message as any).message || message,
       statusCode: status,
-      ...(isProduction ? {} : { path: request.url, method: request.method, timestamp: new Date().toISOString() }),
+      ...(isProduction ? {} : { path: url, method, timestamp: new Date().toISOString() }),
     });
-  }
-
-  private logError(status: number, request: Request, errorDetail?: string) {
-    const logLevel = status >= 500 ? 'error' : 'warn';
-    const logMessage = {
-      status,
-      method: request.method,
-      url: request.url,
-      ip: request.ip,
-      userAgent: request.headers['user-agent'],
-      error: errorDetail,
-    };
-
-    if (logLevel === 'error') {
-      this.logger.error(JSON.stringify(logMessage));
-    } else {
-      this.logger.warn(JSON.stringify(logMessage));
-    }
   }
 }
